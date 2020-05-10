@@ -15,7 +15,9 @@ using std::get;
  */
 UKF::UKF() {
     // TODO move this after :, proper
-    is_initialized_ = false;
+    // is_initialized_ = false;
+
+    state = State::initializing;
 
     // if this is false, laser measurements will be ignored (except during init)
     use_laser_ = true;
@@ -83,6 +85,7 @@ UKF::~UKF() {}
 
 void UKF::init(MeasurementPackage meas_package) {
     // Initialise current state
+    state = State::initialized;
     if (meas_package.sensor_type_ == MeasurementPackage::LASER) {
         auto px = meas_package.raw_measurements_(0);
         auto py = meas_package.raw_measurements_(1);
@@ -109,7 +112,7 @@ void UKF::init(MeasurementPackage meas_package) {
     P_(4, 4) = 10;
 
     // Chop chop, job done!
-    is_initialized_ = true;
+    // is_initialized_ = true;
 }
 
 
@@ -150,7 +153,7 @@ MatrixXd UKF::computeAugmentedSigmaPoints() const {
     return XsigAug;
 }
 
-MatrixXd UKF::predictSigmaPoints(const MatrixXd & XsigAug, double deltaT) const {
+MatrixXd UKF::predictSigmaPoints(const MatrixXd &XsigAug, double deltaT) const {
     double epsilon = 0.000001;  // Threshold under which absolute value of psiDot is considered 0
 
     //Make matrix with predicted sigma points as columns
@@ -161,18 +164,21 @@ MatrixXd UKF::predictSigmaPoints(const MatrixXd & XsigAug, double deltaT) const 
         auto psiDot = XsigAug(4, i);
         auto nu_a = XsigAug(5, i);
         auto nu_psiDotDot = XsigAug(6, i);
-        VectorXd b { VectorXd(5) };
+        VectorXd b{VectorXd(5)};
         b << .5 * pow(deltaT, 2) * cos(psi) * nu_a, .5 * pow(deltaT, 2)
                                                     * sin(psi) * nu_a, deltaT * nu_a, .5 * pow(deltaT, 2)
-                                                                                      * nu_psiDotDot, deltaT * nu_psiDotDot;
-        VectorXd a { VectorXd(5) };
+                                                                                      * nu_psiDotDot, deltaT *
+                                                                                                      nu_psiDotDot;
+        VectorXd a{VectorXd(5)};
         if (abs(psiDot) < epsilon)
             a << v * cos(psi) * deltaT, v * sin(psi) * deltaT, 0, psiDot
                                                                   * deltaT, 0;
         else
             a << v / psiDot * (sin(psi + psiDot * deltaT) - sin(psi)), v
-                                                                       / psiDot * (-cos(psi + psiDot * deltaT) + cos(psi)), 0, psiDot
-                                                                                                                               * deltaT, 0;
+                                                                       / psiDot *
+                                                                       (-cos(psi + psiDot * deltaT) + cos(psi)), 0,
+                    psiDot
+                    * deltaT, 0;
         XsigPred.col(i) = XsigAug.block(0, i, 5, 1) + a + b;
     }
 
@@ -180,7 +186,7 @@ MatrixXd UKF::predictSigmaPoints(const MatrixXd & XsigAug, double deltaT) const 
 }
 
 pair<VectorXd, MatrixXd> UKF::predictStateAndCovariance(
-        const MatrixXd & XsigPred) {
+        const MatrixXd &XsigPred) {
     // Determine the predicted state x based on predicted sigma-points and pre-computed weights_
     x_.setZero();
     for (auto i = 0; i < 2 * xAug_n + 1; ++i)
@@ -210,12 +216,13 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
      */
 
     // Handle initialisation
-    if (!is_initialized_) {
+    if (state == State::initializing) {
         init(meas_package);
-        // Set previousTimeStamp for the next iteration
         time_us_ = meas_package.timestamp_;
-        return; // That's it! After initialisation, nothing more to do until another measurement is collected.
+        return;
     }
+    if (state != State::running)
+        return;
 
 
     /** If the measurement is from an instrument to be ignored, do nothing and just return.
@@ -230,7 +237,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 
     // Calculate the time elapsed between the previous measurement (weather lidar or radar) and the current one,
     // in seconds.
-    double deltaT = (meas_package.timestamp_ - time_us_) / 1000000.0; // seconds
+    // double deltaT = (meas_package.timestamp_ - time_us_) / 1000000.0; // seconds
 
     /*
     * Prediction step
@@ -266,7 +273,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 }
 
 tuple<VectorXd, MatrixXd, MatrixXd> UKF::predictRadarMeasurments(
-        const MatrixXd &XsigPred) const {
+        const MatrixXd &XsigPred_radar) const {
     const int z_n = 3; // Number of components in radar measurements
 
     // Will store sigma points in measurement space
@@ -275,10 +282,10 @@ tuple<VectorXd, MatrixXd, MatrixXd> UKF::predictRadarMeasurments(
     // Transform sigma points into measurement space, implementing the radar measurement model
     Zsig.setZero();
     for (auto i = 0; i < 2 * xAug_n + 1; ++i) {
-        auto px = XsigPred(0, i);
-        auto py = XsigPred(1, i);
-        auto v = XsigPred(2, i);
-        auto psi = XsigPred(3, i);
+        auto px = XsigPred_radar(0, i);
+        auto py = XsigPred_radar(1, i);
+        auto v = XsigPred_radar(2, i);
+        auto psi = XsigPred_radar(3, i);
         auto rho = sqrt(px * px + py * py);
         auto phi = atan2(py, px);
         auto rhoDot = (px * cos(psi) * v + py * sin(psi) * v) / rho;
@@ -297,7 +304,7 @@ tuple<VectorXd, MatrixXd, MatrixXd> UKF::predictRadarMeasurments(
 }
 
 tuple<VectorXd, MatrixXd, MatrixXd> UKF::predictLidarMeasurments(
-        const MatrixXd &XsigPred) const {
+        const MatrixXd &XsigPred_lidar) const {
     const int z_n = 2; // Number of components in lidar measurments
 
     // Will store sigma points in measurement space
@@ -306,8 +313,8 @@ tuple<VectorXd, MatrixXd, MatrixXd> UKF::predictLidarMeasurments(
     // Transform sigma points into measurement space, implementing the lidar measurement model
     Zsig.setZero();
     for (auto i = 0; i < 2 * xAug_n + 1; ++i) {
-        auto px = XsigPred(0, i);
-        auto py = XsigPred(1, i);
+        auto px = XsigPred_lidar(0, i);
+        auto py = XsigPred_lidar(1, i);
         Zsig.col(i) << px, py;
     }
 
@@ -323,10 +330,10 @@ tuple<VectorXd, MatrixXd, MatrixXd> UKF::predictLidarMeasurments(
 }
 
 tuple<VectorXd, MatrixXd, double> UKF::updateStateWithMeasurements(
-        const MeasurementPackage & meas_package, const VectorXd & zPred,
-        const MatrixXd & Zsig, const MatrixXd & S, const MatrixXd & XsigPred) {
+        const MeasurementPackage &meas_package, const VectorXd &zPred,
+        const MatrixXd &Zsig, const MatrixXd &S, const MatrixXd &XsigPred) {
     // Make a matrix to store cross correlation, Tc
-    VectorXd z { meas_package.raw_measurements_ };
+    VectorXd z{meas_package.raw_measurements_};
     const auto z_n = z.size();
     MatrixXd Tc = MatrixXd(n_x_, z_n);
 
@@ -336,17 +343,19 @@ tuple<VectorXd, MatrixXd, double> UKF::updateStateWithMeasurements(
         VectorXd x_diff = XsigPred.col(i) - x_;
         x_diff(3) = normaliseAngle(x_diff(3));
         VectorXd z_diff = Zsig.col(i) - zPred;
-        if (z_diff.size() == 3) // If z_dif has 3 dimensions then measurement comes from radar, and angle theta needs to be normalised
+        if (z_diff.size() ==
+            3) // If z_dif has 3 dimensions then measurement comes from radar, and angle theta needs to be normalised
             z_diff(1) = normaliseAngle(z_diff(1));
         Tc += weights_(i) * x_diff * z_diff.transpose();
     }
 
     // Calculate Kalman gain K;
-    MatrixXd K { Tc * S.inverse() };
+    MatrixXd K{Tc * S.inverse()};
 
     // Update state mean x and its covariance P
     VectorXd z_diff = z - zPred;
-    if (z_diff.size() == 3) // If z_dif has 3 dimensions then measurement comes from radar, and angle theta needs to be normalised
+    if (z_diff.size() ==
+        3) // If z_dif has 3 dimensions then measurement comes from radar, and angle theta needs to be normalised
         z_diff(1) = normaliseAngle(z_diff(1));
     x_ += K * z_diff;
     x_(3) = normaliseAngle(x_(3));
@@ -359,8 +368,8 @@ tuple<VectorXd, MatrixXd, double> UKF::updateStateWithMeasurements(
 }
 
 
-pair<VectorXd, MatrixXd> UKF::predictMeasurements(const MatrixXd & Zsig,
-                                                  const MatrixXd & R) const {
+pair<VectorXd, MatrixXd> UKF::predictMeasurements(const MatrixXd &Zsig,
+                                                  const MatrixXd &R) const {
 
     // Determine the measurement expected value (predicted measurement) and store it in zPred
     const auto z_n = Zsig.rows();
@@ -391,11 +400,13 @@ void UKF::Prediction(double delta_t) {
      * and the state covariance matrix.
      */
 
-    assert(is_initialized_);
-
     /*
     * Prediction step
     */
+
+    assert(state != State::running);
+    if (state == State::initialized)
+        state = State::running;
 
     // Determine the sigma points of the previous belief
     auto XsigAug = computeAugmentedSigmaPoints();
@@ -403,6 +414,7 @@ void UKF::Prediction(double delta_t) {
     XsigPred = predictSigmaPoints(XsigAug, delta_t);
     // Predict mean and covariance based on the predicted sigma points
     predictStateAndCovariance(XsigPred);
+
 }
 
 void UKF::UpdateLidar(MeasurementPackage meas_package) {

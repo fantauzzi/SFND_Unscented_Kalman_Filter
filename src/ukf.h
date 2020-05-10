@@ -108,22 +108,22 @@ public:
     /**
      * Determines the expected value of the next radar measurements, based on given predicted
      * sigma points.
-     * @param XsigPred a matrix whose columns are the predicted sigma points.
+     * @param XsigPred_radar a matrix whose columns are the predicted sigma points.
      * @return a triple: the first element is the vector of measurements expected values;
      * the second element is a matrix whose columns are the sigma points in measurements
      * space; the third element is the expected values covariance matrix.
      */
-    tuple<VectorXd, MatrixXd, MatrixXd> predictRadarMeasurments(const MatrixXd &XsigPred) const;
+    tuple<VectorXd, MatrixXd, MatrixXd> predictRadarMeasurments(const MatrixXd &XsigPred_radar) const;
 
     /**
      * Determines the expected value of the next lidar measurements, based on given predicted
      * sigma points.
-     * @param XsigPred a matrix whose columns are the predicted sigma points.
+     * @param XsigPred_lidar a matrix whose columns are the predicted sigma points.
      * @return a triple: the first element is the vector of measurements expected values;
      * the second element is a matrix whose columns are the sigma points in measurements
      * space; the third element is the expected values covariance matrix.
      */
-    tuple<VectorXd, MatrixXd, MatrixXd> predictLidarMeasurments(const MatrixXd &XsigPred) const;
+    tuple<VectorXd, MatrixXd, MatrixXd> predictLidarMeasurments(const MatrixXd &XsigPred_lidar) const;
 
     /**
      * Updates the currently predicted state x, and its covariance P, based on the latest sensor measurments.
@@ -145,7 +145,11 @@ public:
 
 
     // initially set to false, set to true in first call of ProcessMeasurement
-    bool is_initialized_;
+    // bool is_initialized_;
+
+    enum class State { initializing, initialized, running};
+
+    State state;
 
     // if this is false, laser measurements will be ignored (except for init)
     bool use_laser_;
