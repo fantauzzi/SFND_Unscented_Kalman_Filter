@@ -145,11 +145,10 @@ public:
 
 
     // initially set to false, set to true in first call of ProcessMeasurement
-    // bool is_initialized_;
+    bool is_initialized_;
 
-    enum class State { initializing, initialized, running};
-
-    State state;
+    // enum class State { initializing, initialized, running};
+    // State state;
 
     // if this is false, laser measurements will be ignored (except for init)
     bool use_laser_;
@@ -205,7 +204,7 @@ public:
     // Sigma point spreading parameter
     double lambda_;
 
-    MatrixXd XsigPred;
+    // MatrixXd XsigPred;
 
 
     /* Weights entering the prediction of the state and its covariance, the prediction of measurements

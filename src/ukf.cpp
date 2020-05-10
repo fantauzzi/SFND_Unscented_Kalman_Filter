@@ -15,9 +15,9 @@ using std::get;
  */
 UKF::UKF() {
     // TODO move this after :, proper
-    // is_initialized_ = false;
+    is_initialized_ = false;
 
-    state = State::initializing;
+    // state = State::initializing;
 
     // if this is false, laser measurements will be ignored (except during init)
     use_laser_ = true;
@@ -85,7 +85,10 @@ UKF::~UKF() {}
 
 void UKF::init(MeasurementPackage meas_package) {
     // Initialise current state
-    state = State::initialized;
+    // assert(state == State::initializing);
+    // state = State::initialized;
+    assert(!is_initialized_);
+    is_initialized_ = true;
     if (meas_package.sensor_type_ == MeasurementPackage::LASER) {
         auto px = meas_package.raw_measurements_(0);
         auto py = meas_package.raw_measurements_(1);
@@ -216,6 +219,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
      */
 
     // Handle initialisation
+    /*
     if (state == State::initializing) {
         init(meas_package);
         time_us_ = meas_package.timestamp_;
@@ -223,10 +227,17 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
     }
     if (state != State::running)
         return;
+        */
+
+    if (!is_initialized_) {
+        init(meas_package);
+        time_us_ = meas_package.timestamp_;
+        return;
+    }
 
 
     /** If the measurement is from an instrument to be ignored, do nothing and just return.
-    * Note: no update to previousTimeStamp at this time.
+    * Note: no update to time_us_ at this time.
     */
 
     if (!use_laser_ && meas_package.sensor_type_ == MeasurementPackage::LASER)
@@ -237,17 +248,18 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
 
     // Calculate the time elapsed between the previous measurement (weather lidar or radar) and the current one,
     // in seconds.
-    // double deltaT = (meas_package.timestamp_ - time_us_) / 1000000.0; // seconds
+    double deltaT = (meas_package.timestamp_ - time_us_) / 1000000.0; // seconds
+
 
     /*
     * Prediction step
     */
 
-    /*
+
     auto XsigAug = computeAugmentedSigmaPoints();
     auto XsigPred = predictSigmaPoints(XsigAug, deltaT);
     predictStateAndCovariance(XsigPred);
-     */
+
 
     /*
     * Update step
@@ -404,14 +416,15 @@ void UKF::Prediction(double delta_t) {
     * Prediction step
     */
 
-    assert(state != State::running);
+    assert(is_initialized_);
+    /*assert(state != State::initializing);
     if (state == State::initialized)
-        state = State::running;
+        state = State::running;*/
 
     // Determine the sigma points of the previous belief
     auto XsigAug = computeAugmentedSigmaPoints();
     // Propagate the sigma points through the noise-free state prediction
-    XsigPred = predictSigmaPoints(XsigAug, delta_t);
+    auto XsigPred = predictSigmaPoints(XsigAug, delta_t);
     // Predict mean and covariance based on the predicted sigma points
     predictStateAndCovariance(XsigPred);
 
