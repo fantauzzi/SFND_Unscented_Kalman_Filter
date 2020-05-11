@@ -44,3 +44,9 @@ The next two charts show the Normalised Innovation Square (NIS) for all of the t
  ![Screenshot](nis1.png "Chart") 
  
  ![Screenshot](nis2.png "Chart")
+ 
+ ## Credits
+ 
+ The project uses and include the [Eigen](http://eigen.tuxfamily.org/index.php?title=Main_Page) C++ template library for linear algebra.
+ 
+ Code based on the skeleton provided by Udacity as part of the Sensor Funsion Nanodegree Program. 
