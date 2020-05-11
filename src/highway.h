@@ -16,6 +16,8 @@ public:
 	std::vector<double> rmseThreshold = {0.30,0.16,0.95,0.70};
 	std::vector<double> rmseFailLog = {0.0,0.0,0.0,0.0};
 	Lidar* lidar;
+	string  output_file_name;
+	ofstream output_file;
 	
 	// Parameters 
 	// --------------------------------
@@ -30,9 +32,9 @@ public:
 	int projectedSteps = 6;
 	// --------------------------------
 
-	Highway(pcl::visualization::PCLVisualizer::Ptr& viewer)
+	Highway(pcl::visualization::PCLVisualizer::Ptr& viewer, const string & file_name): output_file_name{file_name}
 	{
-
+	    output_file.open(file_name, ofstream::out);
 		tools = Tools();
 	
 		egoCar = Car(Vect3(0, 0, 0), Vect3(4, 2, 2), Color(0, 1, 0), 0, 0, 2, "egoCar");
@@ -131,7 +133,7 @@ public:
 				tools.ground_truth.push_back(gt);
 				tools.lidarSense(traffic[i], viewer, timestamp, visualize_lidar);
 				tools.radarSense(traffic[i], egoCar, viewer, timestamp, visualize_radar);
-				tools.ukfResults(traffic[i],viewer, projectedTime, projectedSteps);
+				tools.ukfResults(traffic[i],viewer, projectedTime, projectedSteps, output_file);
 				VectorXd estimate(4);
 				double v  = traffic[i].ukf.x_(2);
     			double yaw = traffic[i].ukf.x_(3);

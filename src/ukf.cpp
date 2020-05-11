@@ -216,7 +216,10 @@ void UKF::ProcessMeasurement(const MeasurementPackage &meas_package) {
                                            XsigPred);
 
     // Update the UKF instance NIS
-    nis = get<2>(res);
+    if (meas_package.sensor_type_ == MeasurementPackage::RADAR)
+        nis_radar = get<2>(res);
+    else if (meas_package.sensor_type_ == MeasurementPackage::LASER)
+        nis_lidar = get<2>(res);
 
     // Now it's the time to update previousTimeStamp, to be used in the next iteration
     time_us_ = meas_package.timestamp_;
@@ -355,12 +358,3 @@ MatrixXd UKF::Prediction(double delta_t) {
 
     return XsigPred;
 }
-
-
-/* TODO
- * Optimize code, especially in the simulator part.
- * Save and plot NIS (reuse Python scripts from previous project).
- * Code cleanup, e.g. the constructor of UKF, cut down on member functions used only once and make them anon. lambdas.
- * Writeup, with animated gif?
- * Most recent version of Eigen?
- */

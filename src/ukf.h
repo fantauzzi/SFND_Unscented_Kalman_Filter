@@ -173,8 +173,9 @@ public:
     and their covariance, and calculation of the cross-correlation matrix. */
     VectorXd weights_;
 
-    // The last computed NIS (defaults to 0 if not yet computed)
-    double nis;
+    // The last computed NIS per sensor type (defaults to 0 if not yet computed)
+    double nis_lidar;
+    double nis_radar;
 
 };
 

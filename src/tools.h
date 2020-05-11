@@ -1,8 +1,7 @@
-#ifndef TOOLS_H_
-#define TOOLS_H_
-#include <vector>
-#include "Eigen/Dense"
+#pragma once
 #include "render/render.h"
+#include "Eigen/Dense"
+#include <vector>
 #include <pcl/io/pcd_io.h>
 
 using Eigen::MatrixXd;
@@ -46,7 +45,7 @@ class Tools {
 	double noise(double stddev, long long seedNum);
 	lmarker lidarSense(Car& car, pcl::visualization::PCLVisualizer::Ptr& viewer, long long timestamp, bool visualize);
 	rmarker radarSense(Car& car, Car ego, pcl::visualization::PCLVisualizer::Ptr& viewer, long long timestamp, bool visualize);
-	void ukfResults(Car car, pcl::visualization::PCLVisualizer::Ptr& viewer, double time, int steps);
+	void ukfResults(Car car, pcl::visualization::PCLVisualizer::Ptr& viewer, double time, int steps, ofstream & output_file);
 	/**
 	* A helper method to calculate RMSE.
 	*/
@@ -61,4 +60,4 @@ class Tools {
  */
 double normaliseAngle(const double angle);
 
-#endif /* TOOLS_H_ */
+
