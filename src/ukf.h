@@ -1,8 +1,7 @@
-#ifndef UKF_H
-#define UKF_H
+#pragma once
 
-#include "Eigen/Dense"
 #include "measurement_package.h"
+#include "Eigen/Dense"
 #include <utility>
 #include <tuple>
 
@@ -21,17 +20,15 @@ public:
     /**
      * Destructor
      */
-    virtual ~UKF();
+    virtual ~UKF() = default;
 
     void init(MeasurementPackage meas_package);
-
-    VectorXd getState() const;
 
     /**
      * ProcessMeasurement
      * @param meas_package The latest measurement data of either radar or laser
      */
-    void ProcessMeasurement(MeasurementPackage meas_package);
+    void ProcessMeasurement(const MeasurementPackage & meas_package);
 
     /**
      * Prediction Predicts sigma points, the state, and the state covariance
@@ -39,25 +36,6 @@ public:
      * @param delta_t Time between k and k+1 in s
      */
     MatrixXd Prediction(double delta_t);
-
-    /**
-     * Updates the state and the state covariance matrix using a laser measurement
-     * @param meas_package The measurement at k+1
-     */
-    void UpdateLidar(MeasurementPackage meas_package);
-
-    /**
-     * Updates the state and the state covariance matrix using a radar measurement
-     * @param meas_package The measurement at k+1
-     */
-    void UpdateRadar(MeasurementPackage meas_package);
-
-    /**
- * Computes the sigma points of the non-augmented state vector; useful for testing, not
- * actually used by the UKF.
- * @return a amtrix whose columns are the sigma points.
- */
-    MatrixXd computeSigmaPoints() const;
 
     /**
      * Determines the augmented sigma points based on current state, covariance, noise standard
@@ -83,6 +61,7 @@ public:
      */
     pair<VectorXd, MatrixXd> predictStateAndCovariance(const MatrixXd &XsigPred);
 
+
     /**
      * Determines the expected value of the next measurements, based on given predicted sigma
      * points in measurements space, and the sensor noise covariance.
@@ -92,17 +71,6 @@ public:
      * @return a pair whose first element is a vector with the measurements expected value, and
      * whose second element is its covariance matrix.
      */
-
-
-    /**
- * Determines the expected value of the next measurements, based on given predicted sigma
- * points in measurements space, and the sensor noise covariance.
- * @param Zsig a matrix whose columns are the predicted sigma points, expressed in
- * the measurements space.
- * @param R the sensor noise covariance matrix.
- * @return a pair whose first element is a vector with the measurements expected value, and
- * whose second element is its covariance matrix.
- */
     pair<VectorXd, MatrixXd> predictMeasurements(const MatrixXd &Zsig, const MatrixXd &R) const;
 
     /**
@@ -144,11 +112,8 @@ public:
                                 const MatrixXd &S, const MatrixXd &XsigPred);
 
 
-    // initially set to false, set to true in first call of ProcessMeasurement
+    // initially set to false, set to true in first call to ProcessMeasurement()
     bool is_initialized_;
-
-    // enum class State { initializing, initialized, running};
-    // State state;
 
     // if this is false, laser measurements will be ignored (except for init)
     bool use_laser_;
@@ -189,9 +154,6 @@ public:
     // Radar measurement noise standard deviation radius change in m/s
     double std_radrd_;
 
-    // Weights of sigma points
-    // Eigen::VectorXd weights_;
-
     // State dimension
     int n_x_;
 
@@ -214,8 +176,5 @@ public:
     // The last computed NIS (defaults to 0 if not yet computed)
     double nis;
 
-    MeasurementPackage::SensorType last_used;
-
 };
 
-#endif  // UKF_H

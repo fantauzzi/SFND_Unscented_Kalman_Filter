@@ -74,17 +74,13 @@ void Tools::ukfResults(Car car, pcl::visualization::PCLVisualizer::Ptr& viewer, 
 		double ct = dt;
 		while(ct <= time)
 		{
-            UKF ukf_for_pred = car.ukf;
-            // cout << "car" << endl << car.ukf.x_ << endl;
-			ukf_for_pred.Prediction(ct);
-            // cout << "pred" << endl << ukf_for_pred.x_ << endl;
-			viewer->addSphere(pcl::PointXYZ(ukf_for_pred.x_[0],ukf_for_pred.x_[1],3.5), 0.5, 0, 1, 0,car.name+"_ukf"+std::to_string(ct));
+			ukf.Prediction(dt);
+			viewer->addSphere(pcl::PointXYZ(ukf.x_[0],ukf.x_[1],3.5), 0.5, 0, 1, 0,car.name+"_ukf"+std::to_string(ct));
 			viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_OPACITY, 1.0-0.8*(ct/time), car.name+"_ukf"+std::to_string(ct));
 			// viewer->addArrow(pcl::PointXYZ(ukf_for_pred.x_[0], ukf_for_pred.x_[1],3.5), pcl::PointXYZ(ukf_for_pred.x_[0]+ukf_for_pred.x_[2]*cos(ukf_for_pred.x_[3]),ukf_for_pred.x_[1]+ukf_for_pred.x_[2]*sin(ukf_for_pred.x_[3]),3.5), 0, 1, 0, car.name+"_ukf_vel"+std::to_string(ct));
 			// viewer->setShapeRenderingProperties(pcl::visualization::PCL_VISUALIZER_OPACITY, 1.0-0.8*(ct/time), car.name+"_ukf_vel"+std::to_string(ct));
 			ct += dt;
 		}
-		// cout << "~~~~~~~~~~~~" << endl;
 	}
 
 }
