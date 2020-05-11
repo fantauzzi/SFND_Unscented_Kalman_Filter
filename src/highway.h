@@ -20,14 +20,14 @@ public:
 	// Parameters 
 	// --------------------------------
 	// Set which cars to track with UKF
-	std::vector<bool> trackCars = {true,false,false};
+	std::vector<bool> trackCars = {true,true,true};
 	// Visualize sensor measurements
 	bool visualize_lidar = true;
 	bool visualize_radar = true;
 	bool visualize_pcd = false;
 	// Predict path in the future using UKF
-	double projectedTime = 1;
-	int projectedSteps = 3;
+	double projectedTime = 2;
+	int projectedSteps = 6;
 	// --------------------------------
 
 	Highway(pcl::visualization::PCLVisualizer::Ptr& viewer)
@@ -114,7 +114,6 @@ public:
 			renderPointCloud(viewer, trafficCloud, "trafficCloud", Color((float)184/256,(float)223/256,(float)252/256));
 		}
 		
-
 		// render highway environment with poles
 		renderHighway(egoVelocity*timestamp/1e6, viewer);
 		egoCar.render(viewer);

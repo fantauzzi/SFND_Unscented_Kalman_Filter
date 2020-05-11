@@ -32,10 +32,10 @@ UKF::UKF() {
     P_ = MatrixXd(5, 5);
 
     // Process noise standard deviation longitudinal acceleration in m/s^2
-    std_a_ = 30;
+    std_a_ = 5;
 
     // Process noise standard deviation yaw acceleration in rad/s^2
-    std_yawdd_ = 30;
+    std_yawdd_ = .85;
 
     n_x_ = static_cast<int>(x_.size());
 
@@ -110,9 +110,11 @@ void UKF::init(MeasurementPackage meas_package) {
 
     // Initialise current state covariance
     P_.setIdentity();
-    P_(2, 2) = 10;
-    P_(3, 3) = 10;
-    P_(4, 4) = 10;
+    P_(0, 0) = .0;
+    P_(1, 1) = .0;
+    P_(2, 2) = 0;
+    P_(3, 3) = 0;
+    P_(4, 4) = 0;
 
     // Chop chop, job done!
     // is_initialized_ = true;
@@ -232,6 +234,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
     if (!is_initialized_) {
         init(meas_package);
         time_us_ = meas_package.timestamp_;
+        last_used = meas_package.sensor_type_;
         return;
     }
 
@@ -250,16 +253,28 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
     // in seconds.
     double deltaT = (meas_package.timestamp_ - time_us_) / 1000000.0; // seconds
 
+    /*
+    if (deltaT == 0)
+        return;
+
+    if (use_laser_ && use_radar_ && meas_package.sensor_type_ == last_used)
+        return;
+        */
+
+    last_used = meas_package.sensor_type_;
+
 
     /*
     * Prediction step
     */
 
 
+    /*
     auto XsigAug = computeAugmentedSigmaPoints();
     auto XsigPred = predictSigmaPoints(XsigAug, deltaT);
     predictStateAndCovariance(XsigPred);
-
+     */
+    auto XsigPred = Prediction(deltaT);
 
     /*
     * Update step
@@ -405,7 +420,7 @@ pair<VectorXd, MatrixXd> UKF::predictMeasurements(const MatrixXd &Zsig,
 }
 
 
-void UKF::Prediction(double delta_t) {
+MatrixXd UKF::Prediction(double delta_t) {
     /**
      * TODO: Complete this function! Estimate the object's location.
      * Modify the state vector, x_. Predict sigma points, the state,
@@ -427,6 +442,8 @@ void UKF::Prediction(double delta_t) {
     auto XsigPred = predictSigmaPoints(XsigAug, delta_t);
     // Predict mean and covariance based on the predicted sigma points
     predictStateAndCovariance(XsigPred);
+
+    return XsigPred;
 
 }
 
